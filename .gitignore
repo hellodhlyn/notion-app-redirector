@@ -1,0 +1,6 @@
+*.zip
+*.xpi
+*.pem
+*.DS_Store
+
+web-ext-artifacts/
