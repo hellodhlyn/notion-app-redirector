@@ -22,7 +22,14 @@ function redirect(details) {
 
   // Redirect with scheme.
   const notionScheme = 'notion:/' + element.pathname;
-  return { redirectUrl: notionScheme };
+  try {
+    return { redirectUrl: notionScheme };
+  } finally {
+    // Close tab after 2 seconds.
+    if (details.tabId !== -1) {
+      setTimeout(() => browser.tabs.remove(details.tabId), 2000);
+    }
+  }
 }
 
 const filters = { urls: ['*://*.notion.so/*'] };

@@ -3,7 +3,7 @@
   "manifest_version": 2,
   "name": "notion-app-redirector",
   "description": "Open notion documents with your desktop application directly",
-  "version": "1.0.2",
+  "version": "1.0.3",
 
   "permissions": ["webRequest", "webRequestBlocking", "http://*/*", "https://*/*"],
 

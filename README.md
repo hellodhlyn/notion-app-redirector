@@ -5,3 +5,10 @@
 ## Tested Browsers
 
   - Firefox
+
+## Development
+
+```sh
+# Build
+web-ext build
+```
