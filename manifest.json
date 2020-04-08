@@ -5,7 +5,7 @@
   "description": "Open notion documents with your desktop application directly",
   "version": "1.0.3",
 
-  "permissions": ["webRequest", "webRequestBlocking", "http://*/*", "https://*/*"],
+  "permissions": ["webRequest", "webRequestBlocking", "*://*.notion.so/*"],
 
   "background": {
     "scripts": ["background.js"]
