@@ -22,8 +22,9 @@ function redirect(details) {
 
   // Redirect with scheme.
   const notionScheme = details.url.replace('https', 'notion');
-  return { redirectUrl: notionScheme };
+  browser.tabs.create({ url: notionScheme }).then((tab) => setTimeout(() => { browser.tabs.remove(tab.id) }, 5000));
+  return {};
 }
 
-const filters = { urls: ['*://*.notion.so/*'] };
-browser.webRequest.onBeforeRequest.addListener(redirect, filters, ['blocking']);
+const filters = { urls: ['https://*.notion.so/*'] };
+browser.webRequest.onBeforeRequest.addListener(redirect, filters);
