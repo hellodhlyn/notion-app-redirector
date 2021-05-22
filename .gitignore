@@ -4,3 +4,6 @@
 *.DS_Store
 
 web-ext-artifacts/
+
+.idea
+.code
