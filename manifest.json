@@ -9,7 +9,10 @@
 
   "browser_action": {
     "browser_style": true,
-    "default_popup": "src/popup.html"
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "48": "res/icon.png"
+    }
   },
 
   "background": {
