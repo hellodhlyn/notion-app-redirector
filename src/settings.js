@@ -1,12 +1,16 @@
 const settingsKey = 'nad.settings';
 const settingKeepTabOpenKey = 'nad.settings.keep-tab-open';
 
+const defaultSettings = {
+  [settingKeepTabOpenKey]: true,
+}
+
 async function loadSettings() {
   const value = await browser.storage.local.get(settingsKey);
   if (!value || !value[settingsKey]) {
-    return {};
+    return defaultSettings;
   }
-  return JSON.parse(value[settingsKey]);
+  return { ...defaultSettings, ...JSON.parse(value[settingsKey]) };
 }
 
 async function setSetting(key, value) {
