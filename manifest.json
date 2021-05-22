@@ -13,7 +13,7 @@
   },
 
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["src/settings.js", "src/background.js"]
   }
 
 }

@@ -3,7 +3,7 @@ const exceptingPaths = [
   '/desktop', '/login', '/mobile', '/product', '/pricing', '/native', '/invoice',
 ];
 
-function redirect(details) {
+async function redirect(details) {
   // Ignore urls which are not for document pages, such as js/css file and more.
   if (details.documentUrl) {
     return {};
@@ -21,10 +21,23 @@ function redirect(details) {
   }
 
   // Redirect with scheme.
+  const settings = await loadSettings();
+  const keepTabOpen = settings[settingKeepTabOpenKey] || false;
+
   const notionScheme = details.url.replace('https', 'notion');
-  browser.tabs.create({ url: notionScheme }).then((tab) => setTimeout(() => { browser.tabs.remove(tab.id) }, 5000));
-  return {};
+  if (keepTabOpen) {
+    browser.tabs.create({ url: notionScheme }).then((tab) => setTimeout(() => { browser.tabs.remove(tab.id) }, 5000));
+    return {};
+  } else {
+    try {
+      return { redirectUrl: notionScheme };
+    } finally {
+      if (details.tabId !== -1) {
+        setTimeout(() => browser.tabs.remove(details.tabId), 5000);
+      }
+    }
+  }
 }
 
 const filters = { urls: ['https://*.notion.so/*'] };
-browser.webRequest.onBeforeRequest.addListener(redirect, filters);
+browser.webRequest.onBeforeRequest.addListener(redirect, filters, ['blocking']);
