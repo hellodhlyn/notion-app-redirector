@@ -1,6 +1,6 @@
 // Paths listed below shouldn't be redirect to application.
 const exceptingPaths = [
-  '/desktop', '/login', '/mobile', '/product', '/pricing', '/native', '/invoice', '/web-clipper',
+  '/desktop', '/login', '/mobile', '/product', '/pricing', '/native', '/invoice', '/web-clipper', '/help'
 ];
 
 async function redirect(details) {
