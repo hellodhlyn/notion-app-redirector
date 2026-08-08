@@ -2,14 +2,27 @@ const supportedNotionHosts = new Set(["app.notion.com"]);
 
 function pathPatternToRegExp(pattern) {
   const source = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*/g, ".*");
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*+/g, ".*");
   return new RegExp(`^${source}$`);
 }
 
 const notionExcludedPathMatchers = notionAasaExcludedPathPatterns.map(
   pathPatternToRegExp,
 );
+
+function additionalPathMatchers(pathPatterns) {
+  if (!Array.isArray(pathPatterns)) {
+    return [];
+  }
+
+  return pathPatterns
+    .filter(
+      (pattern) =>
+        typeof pattern === "string" && pattern.startsWith("/"),
+    )
+    .map(pathPatternToRegExp);
+}
 
 function parseSupportedUrl(rawUrl) {
   try {
@@ -23,13 +36,19 @@ function parseSupportedUrl(rawUrl) {
   }
 }
 
-function shouldRedirectToApp(rawUrl) {
+function shouldRedirectToApp(rawUrl, additionalExcludedPathPatterns = []) {
   const url = parseSupportedUrl(rawUrl);
   if (!url || url.pathname === "/") {
     return false;
   }
 
-  return !notionExcludedPathMatchers.some((matcher) => matcher.test(url.pathname));
+  if (notionExcludedPathMatchers.some((matcher) => matcher.test(url.pathname))) {
+    return false;
+  }
+
+  return !additionalPathMatchers(additionalExcludedPathPatterns).some((matcher) =>
+    matcher.test(url.pathname),
+  );
 }
 
 function toAppUrl(rawUrl) {

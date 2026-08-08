@@ -11,7 +11,7 @@ const sourceFiles = [
   "src/background.js",
 ];
 
-function loadBackground({ keepTabOpen = false } = {}) {
+function loadBackground({ keepTabOpen = false, excludedPathPatterns = [] } = {}) {
   const calls = {
     createdTabs: [],
     removedTabs: [],
@@ -33,6 +33,7 @@ function loadBackground({ keepTabOpen = false } = {}) {
             return {
               "nad.settings": JSON.stringify({
                 "nad.settings.keep-tab-open": keepTabOpen,
+                "nad.settings.excluded-path-patterns": excludedPathPatterns,
               }),
             };
           },
@@ -75,7 +76,9 @@ test("registers only the canonical app host and main-frame requests", () => {
 });
 
 test("does not load settings for an excluded browser path", async () => {
-  const { calls, registration } = loadBackground();
+  const { calls, registration } = loadBackground({
+    excludedPathPatterns: ["/private/*"],
+  });
   const result = await registration.listener({
     url: "https://app.notion.com/help/getting-started",
     tabId: 12,
@@ -83,6 +86,36 @@ test("does not load settings for an excluded browser path", async () => {
   });
   assert.equal(Object.keys(result).length, 0);
   assert.equal(calls.storageReads, 0);
+  assert.deepEqual(calls.removedTabs, []);
+});
+
+test("does not redirect a configured exact path", async () => {
+  const { calls, registration } = loadBackground({
+    excludedPathPatterns: ["/specific-page"],
+  });
+  const result = await registration.listener({
+    url: "https://app.notion.com/specific-page?view=compact#details",
+    tabId: 12,
+    statusCode: 200,
+  });
+  assert.equal(Object.keys(result).length, 0);
+  assert.equal(calls.storageReads, 1);
+  assert.deepEqual(calls.createdTabs, []);
+  assert.deepEqual(calls.removedTabs, []);
+});
+
+test("does not redirect a configured wildcard path", async () => {
+  const { calls, registration } = loadBackground({
+    excludedPathPatterns: ["/private/*"],
+  });
+  const result = await registration.listener({
+    url: "https://app.notion.com/private/project/page",
+    tabId: 12,
+    statusCode: 200,
+  });
+  assert.equal(Object.keys(result).length, 0);
+  assert.equal(calls.storageReads, 1);
+  assert.deepEqual(calls.createdTabs, []);
   assert.deepEqual(calls.removedTabs, []);
 });
 

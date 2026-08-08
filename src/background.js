@@ -11,6 +11,15 @@ async function redirect(details) {
 
   // Redirect with scheme.
   const settings = await loadSettings();
+  if (
+    !notionUrlPolicy.shouldRedirectToApp(
+      details.url,
+      settings[settingExcludedPathPatternsKey],
+    )
+  ) {
+    return {};
+  }
+
   const keepTabOpen = settings[settingKeepTabOpenKey] || false;
 
   const notionScheme = notionUrlPolicy.toAppUrl(details.url);

@@ -8,9 +8,31 @@
 <div>
   <h1>Open in Notion App</h1>
   <h2>Settings</h2>
-  <label for="setting-keep-tab-open">
-    <input type="checkbox" id="setting-keep-tab-open"/> Keep browser tabs open after redirection
-  </label>
+  <form id="settings-form">
+    <label for="setting-keep-tab-open">
+      <input type="checkbox" id="setting-keep-tab-open"/> Keep browser tabs open after redirection
+    </label>
+
+    <label for="setting-excluded-path-patterns">Additional paths to keep in the browser</label>
+    <p id="excluded-path-patterns-help">
+      Enter one pathname pattern per line. Patterns must start with <code>/</code>;
+      <code>*</code> matches any characters. Query strings and fragments are ignored.
+      Built-in Notion exclusions always stay in the browser.
+    </p>
+    <p>
+      Examples: <code>/private/*</code>, <code>/team/acme/*</code>,
+      <code>/specific-page</code>
+    </p>
+    <textarea
+      id="setting-excluded-path-patterns"
+      rows="8"
+      spellcheck="false"
+      aria-describedby="excluded-path-patterns-help"
+    ></textarea>
+    <p id="excluded-path-patterns-error" class="message error" role="alert" hidden></p>
+    <p id="excluded-path-patterns-status" class="message success" role="status" aria-live="polite" hidden></p>
+    <button type="submit">Save path patterns</button>
+  </form>
 </div>
 <script src="settings.js"></script>
 <script src="options.js"></script>

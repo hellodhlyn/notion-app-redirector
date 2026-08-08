@@ -1,4 +1,4 @@
-# notion-app-redirector
+# Open in Notion App
 
 > Open [notion](https://www.notion.so) documents with your desktop application directly.
 
@@ -9,6 +9,24 @@
 ## Tested Browsers
 
   - Firefox
+
+## Options
+
+In Firefox, open `about:addons`, select **Open in Notion App**, and open the
+**Preferences** or **Options** tab to manage the extension settings.
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| **Keep browser tabs open after redirection** | Keeps the original browser tab open after the document is sent to the Notion desktop app. | Enabled |
+| **Additional paths to keep in the browser** | Prevents matching `app.notion.com` paths from opening in the desktop app. | Empty |
+
+For additional paths, enter one pathname glob per line. Enter only the pathname, not a full URL.
+
+```text
+/private/*
+/team/acme/*
+/specific-page
+```
 
 ## Development
 

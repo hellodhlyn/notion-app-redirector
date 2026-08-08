@@ -14,6 +14,7 @@ for (const relativePath of [
 }
 
 const { shouldRedirectToApp, toAppUrl } = context.notionUrlPolicy;
+const { pathPatternToRegExp } = context;
 const pageId = "0123456789abcdef0123456789abcdef";
 
 test("redirects canonical document paths on app.notion.com", () => {
@@ -55,6 +56,89 @@ test("matches AASA path patterns without prefix overmatching", () => {
   );
   assert.equal(
     shouldRedirectToApp("https://app.notion.com/team/acme/join/invite-token"),
+    false,
+  );
+});
+
+test("matches configured exact and wildcard path patterns", () => {
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/specific-page", [
+      "/specific-page",
+    ]),
+    false,
+  );
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/private/project/page", [
+      "/private/*",
+    ]),
+    false,
+  );
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/public/project/page", [
+      "/private/*",
+    ]),
+    true,
+  );
+});
+
+test("normalizes consecutive wildcards without changing their matching behavior", () => {
+  const consecutiveStarPattern = ["/a/******/b"];
+  const singleStarPattern = ["/a/*/b"];
+  const matchingUrl = "https://app.notion.com/a/one/two/b";
+  const nonMatchingUrl = `https://app.notion.com/a/${"x".repeat(80)}/c`;
+
+  assert.equal(
+    pathPatternToRegExp(consecutiveStarPattern[0]).source,
+    pathPatternToRegExp(singleStarPattern[0]).source,
+  );
+  assert.equal(
+    shouldRedirectToApp(matchingUrl, consecutiveStarPattern),
+    shouldRedirectToApp(matchingUrl, singleStarPattern),
+  );
+  assert.equal(
+    shouldRedirectToApp(nonMatchingUrl, consecutiveStarPattern),
+    shouldRedirectToApp(nonMatchingUrl, singleStarPattern),
+  );
+  assert.equal(
+    shouldRedirectToApp(nonMatchingUrl, consecutiveStarPattern),
+    true,
+  );
+});
+
+test("matches configured patterns against pathname without query or fragment", () => {
+  assert.equal(
+    shouldRedirectToApp(
+      "https://app.notion.com/custom/team/acme/page?view=compact#details",
+      ["/custom/team/acme/*"],
+    ),
+    false,
+  );
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/custom/team/acme", [
+      "/custom/team/acme/*",
+    ]),
+    true,
+  );
+});
+
+test("treats question marks in configured patterns as literals", () => {
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/custom/literalpage", [
+      "/custom/literal?page",
+    ]),
+    true,
+  );
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/custom/literal%3Fpage", [
+      "/custom/literal%3Fpage",
+    ]),
+    false,
+  );
+});
+
+test("always applies AASA exclusions alongside configured patterns", () => {
+  assert.equal(
+    shouldRedirectToApp("https://app.notion.com/help", ["/help"]),
     false,
   );
 });
