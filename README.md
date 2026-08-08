@@ -13,6 +13,16 @@
 ## Development
 
 ```sh
+# Test
+node --test
+
+# Check the bundled Notion URL exclusions against the current AASA files
+node scripts/update-notion-aasa-exclusions.mjs --check
+
 # Build
 web-ext build
 ```
+
+## License
+
+This project is licensed under the [Mozilla Public License 2.0](LICENSE).
