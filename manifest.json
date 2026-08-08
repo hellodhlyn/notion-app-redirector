@@ -5,14 +5,24 @@
   "description": "Open notion documents with your desktop application directly",
   "version": "1.3.3",
 
-  "permissions": ["webRequest", "webRequestBlocking", "*://*.notion.so/*", "storage"],
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "https://app.notion.com/*",
+    "storage"
+  ],
 
   "options_ui": {
     "page": "src/options.html"
   },
 
   "background": {
-    "scripts": ["src/settings.js", "src/background.js"]
+    "scripts": [
+      "src/notion-aasa-exclusions.js",
+      "src/url-policy.js",
+      "src/settings.js",
+      "src/background.js"
+    ]
   },
 
   "browser_specific_settings": {

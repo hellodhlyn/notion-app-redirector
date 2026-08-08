@@ -13,6 +13,12 @@
 ## Development
 
 ```sh
+# Test
+node --test
+
+# Check the bundled Notion URL exclusions against the current AASA files
+node scripts/update-notion-aasa-exclusions.mjs --check
+
 # Build
 web-ext build
 ```
