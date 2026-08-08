@@ -109,10 +109,10 @@ test("waits for server redirects to finish before opening the app", async () => 
   assert.deepEqual(calls.createdTabs, [
     "notion://app.notion.com/p/0123456789abcdef0123456789abcdef",
   ]);
-  assert.deepEqual(calls.removedTabs, []);
+  assert.deepEqual(calls.removedTabs, [99]);
 });
 
-test("redirects a document without auto-closing the original tab while debugging", async () => {
+test("redirects a document and auto-closes the original tab", async () => {
   const { calls, registration } = loadBackground({ keepTabOpen: false });
   const pageId = "0123456789abcdef0123456789abcdef";
   const result = await registration.listener({
@@ -124,10 +124,10 @@ test("redirects a document without auto-closing the original tab while debugging
     result.redirectUrl,
     `notion://app.notion.com/p/${pageId}?pvs=4`,
   );
-  assert.deepEqual(calls.removedTabs, []);
+  assert.deepEqual(calls.removedTabs, [12]);
 });
 
-test("opens an app tab without auto-closing it while preserving the browser tab", async () => {
+test("opens and auto-closes an app tab while preserving the browser tab", async () => {
   const { calls, registration } = loadBackground({ keepTabOpen: true });
   const pageId = "0123456789abcdef0123456789abcdef";
   const result = await registration.listener({
@@ -140,5 +140,5 @@ test("opens an app tab without auto-closing it while preserving the browser tab"
   assert.deepEqual(calls.createdTabs, [
     `notion://app.notion.com/p/${pageId}`,
   ]);
-  assert.deepEqual(calls.removedTabs, []);
+  assert.deepEqual(calls.removedTabs, [99]);
 });
