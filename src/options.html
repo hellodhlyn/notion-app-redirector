@@ -10,8 +10,13 @@
   <h2>Settings</h2>
   <form id="settings-form">
     <label for="setting-keep-tab-open">
-      <input type="checkbox" id="setting-keep-tab-open"/> Keep browser tabs open after redirection
+      <input
+        type="checkbox"
+        id="setting-keep-tab-open"
+        aria-describedby="keep-tab-open-error"
+      /> Keep browser tabs open after redirection
     </label>
+    <p id="keep-tab-open-error" class="message error" role="alert" hidden></p>
 
     <label for="setting-excluded-path-patterns">Additional paths to keep in the browser</label>
     <p id="excluded-path-patterns-help">

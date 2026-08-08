@@ -3,10 +3,27 @@
     const settings = await loadSettings();
 
     const settingKeepTabOpenElem = document.querySelector("#setting-keep-tab-open");
-    settingKeepTabOpenElem.checked = settings[settingKeepTabOpenKey] || false;
-    settingKeepTabOpenElem.addEventListener("change", (event) =>
-      setSetting(settingKeepTabOpenKey, event.currentTarget.checked),
-    );
+    const keepTabOpenErrorElem = document.querySelector("#keep-tab-open-error");
+    let savedKeepTabOpen = settings[settingKeepTabOpenKey] || false;
+    settingKeepTabOpenElem.checked = savedKeepTabOpen;
+    settingKeepTabOpenElem.addEventListener("change", async (event) => {
+      const checkbox = event.currentTarget;
+      const nextKeepTabOpen = checkbox.checked;
+      keepTabOpenErrorElem.hidden = true;
+      checkbox.disabled = true;
+
+      try {
+        await setSetting(settingKeepTabOpenKey, nextKeepTabOpen);
+        savedKeepTabOpen = nextKeepTabOpen;
+      } catch {
+        checkbox.checked = savedKeepTabOpen;
+        keepTabOpenErrorElem.textContent =
+          "Could not save this setting. Please try again.";
+        keepTabOpenErrorElem.hidden = false;
+      } finally {
+        checkbox.disabled = false;
+      }
+    });
 
     const settingsForm = document.querySelector("#settings-form");
     const excludedPathPatternsElem = document.querySelector(
@@ -29,7 +46,8 @@
       errorElem.hidden = true;
       statusElem.hidden = true;
 
-      const patterns = excludedPathPatternsElem.value
+      const submittedValue = excludedPathPatternsElem.value;
+      const patterns = submittedValue
         .split(/\r?\n/)
         .map((pattern) => pattern.trim());
       const invalidPattern = patterns.find(
@@ -54,8 +72,14 @@
         patternSaveInFlight = false;
       }
 
-      excludedPathPatternsElem.value = normalizedPatterns.join("\n");
-      statusElem.textContent = "Path patterns saved.";
+      const inputChangedWhileSaving =
+        excludedPathPatternsElem.value !== submittedValue;
+      if (!inputChangedWhileSaving) {
+        excludedPathPatternsElem.value = normalizedPatterns.join("\n");
+      }
+      statusElem.textContent = inputChangedWhileSaving
+        ? "Path patterns saved. New changes are not saved yet."
+        : "Path patterns saved.";
       statusElem.hidden = false;
     });
   }
