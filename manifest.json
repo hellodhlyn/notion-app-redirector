@@ -13,6 +13,15 @@
 
   "background": {
     "scripts": ["src/settings.js", "src/background.js"]
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{58023c2f-0bbe-4f8e-abc5-12f8abf98c7e}",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
   }
 
 }
