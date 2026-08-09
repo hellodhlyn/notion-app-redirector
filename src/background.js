@@ -5,16 +5,12 @@ async function redirect(details) {
     return {};
   }
 
-  if (!notionUrlPolicy.shouldRedirectToApp(details.url)) {
-    return {};
-  }
-
-  // Redirect with scheme.
   const settings = await loadSettings();
   if (
     !notionUrlPolicy.shouldRedirectToApp(
       details.url,
       settings[settingExcludedPathPatternsKey],
+      settings[settingAdditionalHostsKey],
     )
   ) {
     return {};
@@ -40,7 +36,7 @@ async function redirect(details) {
 }
 
 const filters = {
-  urls: ["https://app.notion.com/*"],
+  urls: ["https://*.notion.com/*", "https://*.notion.so/*"],
   types: ["main_frame"],
 };
 browser.webRequest.onHeadersReceived.addListener(redirect, filters, ["blocking"]);

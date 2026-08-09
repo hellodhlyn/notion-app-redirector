@@ -18,7 +18,17 @@ In Firefox, open `about:addons`, select **Open in Notion App**, and open the
 | Setting | Description | Default |
 | --- | --- | --- |
 | **Keep browser tabs open after redirection** | Keeps the original browser tab open after the document is sent to the Notion desktop app. | Enabled |
-| **Additional paths to keep in the browser** | Prevents matching `app.notion.com` paths from opening in the desktop app. | Empty |
+| **Additional hosts to open in the Notion app** | Allows exact `notion.com` or `notion.so` hostnames in addition to `app.notion.com` and `www.notion.so`. Full HTTPS URLs are normalized to their hostname. | Empty |
+| **Additional paths to keep in the browser** | Prevents matching paths on every allowed host from opening in the desktop app. | Empty |
+
+For additional hosts, enter one exact hostname or HTTPS URL per line. Wildcards
+and domains outside `notion.com` and `notion.so` are rejected.
+
+```text
+notion.so
+team.notion.so
+https://workspace.notion.com/project/page
+```
 
 For additional paths, enter one pathname glob per line. Enter only the pathname, not a full URL.
 

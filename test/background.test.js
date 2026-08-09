@@ -5,13 +5,21 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const sourceFiles = [
+  "src/notion-hosts.js",
   "src/notion-aasa-exclusions.js",
   "src/url-policy.js",
   "src/settings.js",
   "src/background.js",
 ];
+const manifest = JSON.parse(
+  fs.readFileSync(path.resolve("manifest.json"), "utf8"),
+);
 
-function loadBackground({ keepTabOpen = false, excludedPathPatterns = [] } = {}) {
+function loadBackground({
+  keepTabOpen = false,
+  excludedPathPatterns = [],
+  additionalHosts = [],
+} = {}) {
   const calls = {
     createdTabs: [],
     removedTabs: [],
@@ -34,6 +42,7 @@ function loadBackground({ keepTabOpen = false, excludedPathPatterns = [] } = {})
               "nad.settings": JSON.stringify({
                 "nad.settings.keep-tab-open": keepTabOpen,
                 "nad.settings.excluded-path-patterns": excludedPathPatterns,
+                "nad.settings.additional-hosts": additionalHosts,
               }),
             };
           },
@@ -66,16 +75,21 @@ function loadBackground({ keepTabOpen = false, excludedPathPatterns = [] } = {})
   return { calls, registration };
 }
 
-test("registers only the canonical app host and main-frame requests", () => {
+test("registers supported document hosts and matching permissions", () => {
   const { registration } = loadBackground();
-  assert.deepEqual(Array.from(registration.filters.urls), [
-    "https://app.notion.com/*",
-  ]);
+  const supportedUrls = [
+    "https://*.notion.com/*",
+    "https://*.notion.so/*",
+  ];
+  assert.deepEqual(Array.from(registration.filters.urls), supportedUrls);
+  for (const url of supportedUrls) {
+    assert.equal(manifest.permissions.includes(url), true, url);
+  }
   assert.deepEqual(Array.from(registration.filters.types), ["main_frame"]);
   assert.deepEqual(Array.from(registration.extraInfoSpec), ["blocking"]);
 });
 
-test("does not load settings for an excluded browser path", async () => {
+test("keeps a built-in excluded browser path", async () => {
   const { calls, registration } = loadBackground({
     excludedPathPatterns: ["/private/*"],
   });
@@ -85,7 +99,7 @@ test("does not load settings for an excluded browser path", async () => {
     statusCode: 200,
   });
   assert.equal(Object.keys(result).length, 0);
-  assert.equal(calls.storageReads, 0);
+  assert.equal(calls.storageReads, 1);
   assert.deepEqual(calls.removedTabs, []);
 });
 
@@ -158,6 +172,48 @@ test("redirects a document and auto-closes the original tab", async () => {
     `notion://app.notion.com/p/${pageId}?pvs=4`,
   );
   assert.deepEqual(calls.removedTabs, [12]);
+});
+
+test("redirects a legacy notion.so document without changing its host", async () => {
+  const { calls, registration } = loadBackground({ keepTabOpen: false });
+  const pageId = "0123456789abcdef0123456789abcdef";
+  const result = await registration.listener({
+    url: `https://www.notion.so/p/${pageId}?pvs=4#section`,
+    tabId: 12,
+    statusCode: 200,
+  });
+  assert.equal(
+    result.redirectUrl,
+    `notion://www.notion.so/p/${pageId}?pvs=4#section`,
+  );
+  assert.deepEqual(calls.removedTabs, [12]);
+});
+
+test("redirects only configured additional hosts and preserves their host", async () => {
+  const pageId = "0123456789abcdef0123456789abcdef";
+  const unconfigured = loadBackground({ keepTabOpen: false });
+  const unconfiguredResult = await unconfigured.registration.listener({
+    url: `https://team.notion.so/p/${pageId}`,
+    tabId: 12,
+    statusCode: 200,
+  });
+  assert.equal(Object.keys(unconfiguredResult).length, 0);
+  assert.deepEqual(unconfigured.calls.removedTabs, []);
+
+  const configured = loadBackground({
+    keepTabOpen: false,
+    additionalHosts: ["team.notion.so"],
+  });
+  const configuredResult = await configured.registration.listener({
+    url: `https://team.notion.so/p/${pageId}?view=compact#section`,
+    tabId: 12,
+    statusCode: 200,
+  });
+  assert.equal(
+    configuredResult.redirectUrl,
+    `notion://team.notion.so/p/${pageId}?view=compact#section`,
+  );
+  assert.deepEqual(configured.calls.removedTabs, [12]);
 });
 
 test("opens and auto-closes an app tab while preserving the browser tab", async () => {

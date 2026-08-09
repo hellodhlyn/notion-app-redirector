@@ -4,10 +4,15 @@ const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
+const hostSource = fs.readFileSync(
+  path.resolve("src/notion-hosts.js"),
+  "utf8",
+);
 const source = fs.readFileSync(path.resolve("src/settings.js"), "utf8");
 
 function loadSettingsContext(storage, { set } = {}) {
   const context = vm.createContext({
+    URL,
     browser: {
       storage: {
         local: {
@@ -24,6 +29,7 @@ function loadSettingsContext(storage, { set } = {}) {
       },
     },
   });
+  vm.runInContext(hostSource, context, { filename: "src/notion-hosts.js" });
   vm.runInContext(source, context, { filename: "src/settings.js" });
   vm.runInContext(
     `globalThis.settingsTestApi = {
@@ -31,6 +37,7 @@ function loadSettingsContext(storage, { set } = {}) {
       setSetting,
       settingKeepTabOpenKey,
       settingExcludedPathPatternsKey,
+      settingAdditionalHostsKey,
     };`,
     context,
   );
@@ -49,6 +56,13 @@ test("persists normalized excluded path patterns without changing tab setting", 
     "team/acme/*",
     "/specific-page",
   ]);
+  await firstSession.setSetting(firstSession.settingAdditionalHostsKey, [
+    " notion.so ",
+    "https://TEAM.notion.so/project/page?view=compact",
+    "team.notion.so",
+    "https://notion.so.example.com/page",
+    "http://legacy.notion.so/page",
+  ]);
 
   const restartedSession = loadSettingsContext(storage);
   assert.deepEqual(JSON.parse(JSON.stringify(await restartedSession.loadSettings())), {
@@ -56,6 +70,10 @@ test("persists normalized excluded path patterns without changing tab setting", 
     [restartedSession.settingExcludedPathPatternsKey]: [
       "/private/*",
       "/specific-page",
+    ],
+    [restartedSession.settingAdditionalHostsKey]: [
+      "notion.so",
+      "team.notion.so",
     ],
   });
 });
@@ -65,6 +83,7 @@ test("loads defaults when no settings have been saved", async () => {
   assert.deepEqual(JSON.parse(JSON.stringify(await settings.loadSettings())), {
     [settings.settingKeepTabOpenKey]: true,
     [settings.settingExcludedPathPatternsKey]: [],
+    [settings.settingAdditionalHostsKey]: [],
   });
 });
 
@@ -108,6 +127,7 @@ test("serializes overlapping setting writes without losing either update", async
     persisted[settings.settingExcludedPathPatternsKey],
     ["/private/*"],
   );
+  assert.deepEqual(persisted[settings.settingAdditionalHostsKey], []);
 });
 
 test("recovers the settings write queue after a rejected write", async () => {
@@ -151,4 +171,5 @@ test("recovers the settings write queue after a rejected write", async () => {
     persisted[settings.settingExcludedPathPatternsKey],
     ["/private/*"],
   );
+  assert.deepEqual(persisted[settings.settingAdditionalHostsKey], []);
 });

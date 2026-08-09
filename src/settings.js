@@ -1,10 +1,12 @@
 const settingsKey = 'nad.settings';
 const settingKeepTabOpenKey = 'nad.settings.keep-tab-open';
 const settingExcludedPathPatternsKey = 'nad.settings.excluded-path-patterns';
+const settingAdditionalHostsKey = 'nad.settings.additional-hosts';
 
 const defaultSettings = {
   [settingKeepTabOpenKey]: true,
   [settingExcludedPathPatternsKey]: [],
+  [settingAdditionalHostsKey]: [],
 };
 let settingsWriteQueue = Promise.resolve();
 
@@ -40,6 +42,7 @@ function createDefaultSettings() {
   return {
     ...defaultSettings,
     [settingExcludedPathPatternsKey]: [],
+    [settingAdditionalHostsKey]: [],
   };
 }
 
@@ -56,6 +59,9 @@ async function loadSettings() {
     [settingExcludedPathPatternsKey]: normalizeExcludedPathPatterns(
       storedSettings[settingExcludedPathPatternsKey],
     ),
+    [settingAdditionalHostsKey]: notionHostPolicy.normalizeAdditionalHosts(
+      storedSettings[settingAdditionalHostsKey],
+    ),
   };
 }
 
@@ -65,7 +71,9 @@ async function setSetting(key, value) {
     settings[key] =
       key === settingExcludedPathPatternsKey
         ? normalizeExcludedPathPatterns(value)
-        : value;
+        : key === settingAdditionalHostsKey
+          ? notionHostPolicy.normalizeAdditionalHosts(value)
+          : value;
     await browser.storage.local.set({ [settingsKey]: JSON.stringify(settings) });
   });
   settingsWriteQueue = write.catch(() => {});

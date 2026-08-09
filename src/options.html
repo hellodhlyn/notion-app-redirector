@@ -8,16 +8,34 @@
 <div>
   <h1>Open in Notion App</h1>
   <h2>Settings</h2>
-  <form id="settings-form">
-    <label for="setting-keep-tab-open">
-      <input
-        type="checkbox"
-        id="setting-keep-tab-open"
-        aria-describedby="keep-tab-open-error"
-      /> Keep browser tabs open after redirection
-    </label>
-    <p id="keep-tab-open-error" class="message error" role="alert" hidden></p>
+  <label for="setting-keep-tab-open">
+    <input
+      type="checkbox"
+      id="setting-keep-tab-open"
+      aria-describedby="keep-tab-open-error"
+    /> Keep browser tabs open after redirection
+  </label>
+  <p id="keep-tab-open-error" class="message error" role="alert" hidden></p>
 
+  <form id="hosts-form">
+    <label for="setting-additional-hosts">Additional hosts to open in the Notion app</label>
+    <p id="additional-hosts-help">
+      Enter one exact Notion hostname or HTTPS URL per line. Only
+      <code>notion.com</code>, <code>notion.so</code>, and their subdomains are allowed.
+    </p>
+    <textarea
+      id="setting-additional-hosts"
+      rows="4"
+      spellcheck="false"
+      placeholder="app.notion.com and www.notion.so are allowed by default"
+      aria-describedby="additional-hosts-help"
+    ></textarea>
+    <p id="additional-hosts-error" class="message error" role="alert" hidden></p>
+    <p id="additional-hosts-status" class="message success" role="status" aria-live="polite" hidden></p>
+    <button type="submit">Save hosts</button>
+  </form>
+
+  <form id="settings-form">
     <label for="setting-excluded-path-patterns">Additional paths to keep in the browser</label>
     <p id="excluded-path-patterns-help">
       Enter one pathname pattern per line. Patterns must start with <code>/</code>;
@@ -39,6 +57,7 @@
     <button type="submit">Save path patterns</button>
   </form>
 </div>
+<script src="notion-hosts.js"></script>
 <script src="settings.js"></script>
 <script src="options.js"></script>
 </body>

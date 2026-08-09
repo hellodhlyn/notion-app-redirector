@@ -1,4 +1,4 @@
-const supportedNotionHosts = new Set(["app.notion.com"]);
+const defaultNotionHostSet = new Set(notionHostPolicy.defaultHosts);
 
 function pathPatternToRegExp(pattern) {
   const source = pattern
@@ -24,10 +24,13 @@ function additionalPathMatchers(pathPatterns) {
     .map(pathPatternToRegExp);
 }
 
-function parseSupportedUrl(rawUrl) {
+function parseNotionUrl(rawUrl) {
   try {
     const url = new URL(rawUrl);
-    if (url.protocol !== "https:" || !supportedNotionHosts.has(url.hostname)) {
+    if (
+      url.protocol !== "https:" ||
+      !notionHostPolicy.isNotionHostname(url.hostname)
+    ) {
       return null;
     }
     return url;
@@ -36,9 +39,17 @@ function parseSupportedUrl(rawUrl) {
   }
 }
 
-function shouldRedirectToApp(rawUrl, additionalExcludedPathPatterns = []) {
-  const url = parseSupportedUrl(rawUrl);
-  if (!url || url.pathname === "/") {
+function shouldRedirectToApp(
+  rawUrl,
+  additionalExcludedPathPatterns = [],
+  additionalAllowedHosts = [],
+) {
+  const url = parseNotionUrl(rawUrl);
+  const allowedHosts = new Set([
+    ...defaultNotionHostSet,
+    ...notionHostPolicy.normalizeAdditionalHosts(additionalAllowedHosts),
+  ]);
+  if (!url || !allowedHosts.has(url.hostname) || url.pathname === "/") {
     return false;
   }
 
@@ -52,7 +63,7 @@ function shouldRedirectToApp(rawUrl, additionalExcludedPathPatterns = []) {
 }
 
 function toAppUrl(rawUrl) {
-  const url = parseSupportedUrl(rawUrl);
+  const url = parseNotionUrl(rawUrl);
   if (!url) {
     throw new TypeError("Unsupported Notion URL");
   }

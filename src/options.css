@@ -7,8 +7,10 @@ form {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 20px;
 }
 
+label[for="setting-additional-hosts"],
 label[for="setting-excluded-path-patterns"] {
   font-weight: 600;
 }
