@@ -8,7 +8,8 @@
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "https://app.notion.com/*",
+    "https://*.notion.com/*",
+    "https://*.notion.so/*",
     "storage"
   ],
 
@@ -18,6 +19,7 @@
 
   "background": {
     "scripts": [
+      "src/notion-hosts.js",
       "src/notion-aasa-exclusions.js",
       "src/url-policy.js",
       "src/settings.js",

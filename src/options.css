@@ -2,3 +2,42 @@ body {
   width: 400px;
   padding: 20px 20px 40px;
 }
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+label[for="setting-additional-hosts"],
+label[for="setting-excluded-path-patterns"] {
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font-family: monospace;
+  resize: vertical;
+}
+
+button {
+  align-self: flex-start;
+}
+
+.message {
+  margin: 0;
+}
+
+.error {
+  color: #b00020;
+}
+
+.success {
+  color: #176b2c;
+}

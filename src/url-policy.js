@@ -1,9 +1,9 @@
-const supportedNotionHosts = new Set(["app.notion.com"]);
+const defaultNotionHostSet = new Set(notionHostPolicy.defaultHosts);
 
 function pathPatternToRegExp(pattern) {
   const source = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*/g, ".*");
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*+/g, ".*");
   return new RegExp(`^${source}$`);
 }
 
@@ -11,10 +11,26 @@ const notionExcludedPathMatchers = notionAasaExcludedPathPatterns.map(
   pathPatternToRegExp,
 );
 
-function parseSupportedUrl(rawUrl) {
+function additionalPathMatchers(pathPatterns) {
+  if (!Array.isArray(pathPatterns)) {
+    return [];
+  }
+
+  return pathPatterns
+    .filter(
+      (pattern) =>
+        typeof pattern === "string" && pattern.startsWith("/"),
+    )
+    .map(pathPatternToRegExp);
+}
+
+function parseNotionUrl(rawUrl) {
   try {
     const url = new URL(rawUrl);
-    if (url.protocol !== "https:" || !supportedNotionHosts.has(url.hostname)) {
+    if (
+      url.protocol !== "https:" ||
+      !notionHostPolicy.isNotionHostname(url.hostname)
+    ) {
       return null;
     }
     return url;
@@ -23,17 +39,31 @@ function parseSupportedUrl(rawUrl) {
   }
 }
 
-function shouldRedirectToApp(rawUrl) {
-  const url = parseSupportedUrl(rawUrl);
-  if (!url || url.pathname === "/") {
+function shouldRedirectToApp(
+  rawUrl,
+  additionalExcludedPathPatterns = [],
+  additionalAllowedHosts = [],
+) {
+  const url = parseNotionUrl(rawUrl);
+  const allowedHosts = new Set([
+    ...defaultNotionHostSet,
+    ...notionHostPolicy.normalizeAdditionalHosts(additionalAllowedHosts),
+  ]);
+  if (!url || !allowedHosts.has(url.hostname) || url.pathname === "/") {
     return false;
   }
 
-  return !notionExcludedPathMatchers.some((matcher) => matcher.test(url.pathname));
+  if (notionExcludedPathMatchers.some((matcher) => matcher.test(url.pathname))) {
+    return false;
+  }
+
+  return !additionalPathMatchers(additionalExcludedPathPatterns).some((matcher) =>
+    matcher.test(url.pathname),
+  );
 }
 
 function toAppUrl(rawUrl) {
-  const url = parseSupportedUrl(rawUrl);
+  const url = parseNotionUrl(rawUrl);
   if (!url) {
     throw new TypeError("Unsupported Notion URL");
   }
