@@ -57,9 +57,12 @@ test("keeps the root and AASA-excluded paths in the browser", () => {
       "/help",
       "/help/getting-started",
       "/login",
+      "/reverify-student-email",
+      "/appeals/case-123",
       "/oauth2/authorize",
       "/profile/settings",
       "/desktop/whats-new",
+      "/web-clipper/safari/download/release",
     ]) {
       assert.equal(
         shouldRedirectToApp(`https://${host}${path}`),

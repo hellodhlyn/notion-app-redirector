@@ -1,7 +1,29 @@
-const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);
+const openedAppRequestIds = new Set();
+const maxRememberedAppRequestIds = 256;
+
+function hasOpenedAppForRequest(requestId) {
+  return typeof requestId === "string" && openedAppRequestIds.has(requestId);
+}
+
+function rememberAppOpenForRequest(requestId) {
+  if (typeof requestId !== "string") {
+    return;
+  }
+
+  openedAppRequestIds.add(requestId);
+  if (openedAppRequestIds.size > maxRememberedAppRequestIds) {
+    openedAppRequestIds.delete(openedAppRequestIds.values().next().value);
+  }
+}
+
+function forgetAppOpenForRequest(requestId) {
+  if (typeof requestId === "string") {
+    openedAppRequestIds.delete(requestId);
+  }
+}
 
 async function redirect(details) {
-  if (redirectStatusCodes.has(details.statusCode)) {
+  if (hasOpenedAppForRequest(details.requestId)) {
     return {};
   }
 
@@ -20,9 +42,13 @@ async function redirect(details) {
 
   const notionScheme = notionUrlPolicy.toAppUrl(details.url);
   if (keepTabOpen) {
-    browser.tabs.create({ url: notionScheme }).then((tab) => {
-      setTimeout(() => browser.tabs.remove(tab.id), 5000);
-    });
+    rememberAppOpenForRequest(details.requestId);
+    browser.tabs.create({ url: notionScheme }).then(
+      (tab) => {
+        setTimeout(() => browser.tabs.remove(tab.id), 5000);
+      },
+      () => forgetAppOpenForRequest(details.requestId),
+    );
     return {};
   } else {
     try {
@@ -39,4 +65,4 @@ const filters = {
   urls: ["https://*.notion.com/*", "https://*.notion.so/*"],
   types: ["main_frame"],
 };
-browser.webRequest.onHeadersReceived.addListener(redirect, filters, ["blocking"]);
+browser.webRequest.onBeforeRequest.addListener(redirect, filters, ["blocking"]);

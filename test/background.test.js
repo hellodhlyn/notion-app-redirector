@@ -58,7 +58,7 @@ function loadBackground({
         },
       },
       webRequest: {
-        onHeadersReceived: {
+        onBeforeRequest: {
           addListener(listener, filters, extraInfoSpec) {
             registration = { listener, filters, extraInfoSpec };
           },
@@ -96,7 +96,6 @@ test("keeps a built-in excluded browser path", async () => {
   const result = await registration.listener({
     url: "https://app.notion.com/help/getting-started",
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(Object.keys(result).length, 0);
   assert.equal(calls.storageReads, 1);
@@ -110,7 +109,6 @@ test("does not redirect a configured exact path", async () => {
   const result = await registration.listener({
     url: "https://app.notion.com/specific-page?view=compact#details",
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(Object.keys(result).length, 0);
   assert.equal(calls.storageReads, 1);
@@ -125,7 +123,6 @@ test("does not redirect a configured wildcard path", async () => {
   const result = await registration.listener({
     url: "https://app.notion.com/private/project/page",
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(Object.keys(result).length, 0);
   assert.equal(calls.storageReads, 1);
@@ -133,30 +130,55 @@ test("does not redirect a configured wildcard path", async () => {
   assert.deepEqual(calls.removedTabs, []);
 });
 
-test("waits for server redirects to finish before opening the app", async () => {
+test("opens the app only once for a redirect chain while preserving the browser tab", async () => {
   const { calls, registration } = loadBackground({ keepTabOpen: true });
-  const redirectResult = await registration.listener({
-    url: "https://app.notion.com/p/0123456789abcdef0123456789abcdef?temporary=1",
+  const requestId = "redirect-chain-1";
+  const initialUrl =
+    "https://app.notion.com/p/0123456789abcdef0123456789abcdef?temporary=1";
+  const initialResult = await registration.listener({
+    requestId,
+    url: initialUrl,
     tabId: 12,
-    statusCode: 307,
   });
-  assert.equal(Object.keys(redirectResult).length, 0);
+  assert.equal(Object.keys(initialResult).length, 0);
 
   const finalUrl =
     "https://app.notion.com/p/0123456789abcdef0123456789abcdef";
   const finalResult = await registration.listener({
+    requestId,
     url: finalUrl,
     tabId: 12,
-    statusCode: 200,
   });
   await new Promise((resolve) => setImmediate(resolve));
 
   assert.equal(Object.keys(finalResult).length, 0);
   assert.equal(calls.storageReads, 1);
   assert.deepEqual(calls.createdTabs, [
-    "notion://app.notion.com/p/0123456789abcdef0123456789abcdef",
+    initialUrl.replace(/^https:/, "notion:"),
   ]);
   assert.deepEqual(calls.removedTabs, [99]);
+});
+
+test("opens the app for separate navigation requests", async () => {
+  const { calls, registration } = loadBackground({ keepTabOpen: true });
+  const pageId = "0123456789abcdef0123456789abcdef";
+
+  for (const requestId of ["navigation-1", "navigation-2"]) {
+    const result = await registration.listener({
+      requestId,
+      url: `https://app.notion.com/p/${pageId}`,
+      tabId: 12,
+    });
+    assert.equal(Object.keys(result).length, 0);
+  }
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(calls.storageReads, 2);
+  assert.deepEqual(calls.createdTabs, [
+    `notion://app.notion.com/p/${pageId}`,
+    `notion://app.notion.com/p/${pageId}`,
+  ]);
+  assert.deepEqual(calls.removedTabs, [99, 99]);
 });
 
 test("redirects a document and auto-closes the original tab", async () => {
@@ -165,7 +187,6 @@ test("redirects a document and auto-closes the original tab", async () => {
   const result = await registration.listener({
     url: `https://app.notion.com/p/${pageId}?pvs=4`,
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(
     result.redirectUrl,
@@ -180,7 +201,6 @@ test("redirects a legacy notion.so document without changing its host", async ()
   const result = await registration.listener({
     url: `https://www.notion.so/p/${pageId}?pvs=4#section`,
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(
     result.redirectUrl,
@@ -195,7 +215,6 @@ test("redirects only configured additional hosts and preserves their host", asyn
   const unconfiguredResult = await unconfigured.registration.listener({
     url: `https://team.notion.so/p/${pageId}`,
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(Object.keys(unconfiguredResult).length, 0);
   assert.deepEqual(unconfigured.calls.removedTabs, []);
@@ -207,7 +226,6 @@ test("redirects only configured additional hosts and preserves their host", asyn
   const configuredResult = await configured.registration.listener({
     url: `https://team.notion.so/p/${pageId}?view=compact#section`,
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(
     configuredResult.redirectUrl,
@@ -220,9 +238,9 @@ test("opens and auto-closes an app tab while preserving the browser tab", async 
   const { calls, registration } = loadBackground({ keepTabOpen: true });
   const pageId = "0123456789abcdef0123456789abcdef";
   const result = await registration.listener({
+    requestId: "navigation-1",
     url: `https://app.notion.com/p/${pageId}`,
     tabId: 12,
-    statusCode: 200,
   });
   assert.equal(Object.keys(result).length, 0);
   await new Promise((resolve) => setImmediate(resolve));
