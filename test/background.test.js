@@ -102,6 +102,21 @@ test("keeps a built-in excluded browser path", async () => {
   assert.deepEqual(calls.removedTabs, []);
 });
 
+test("keeps popup login bootstrap navigation in the browser", async () => {
+  const { calls, registration } = loadBackground({ keepTabOpen: false });
+  const result = await registration.listener({
+    requestId: "popup-login-1",
+    url:
+      "https://app.notion.com/verifyNoPopupBlockerHtmlAndRedirect" +
+      "?redirectUri=https%3A%2F%2Fapp.notion.com%2Fgooglepopupredirect%3FcallbackType%3Dpopup%26redirectToAuth%3Dtrue",
+    tabId: 12,
+  });
+
+  assert.equal(Object.keys(result).length, 0);
+  assert.deepEqual(calls.createdTabs, []);
+  assert.deepEqual(calls.removedTabs, []);
+});
+
 test("does not redirect a configured exact path", async () => {
   const { calls, registration } = loadBackground({
     excludedPathPatterns: ["/specific-page"],

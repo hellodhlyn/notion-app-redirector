@@ -57,6 +57,7 @@ test("keeps the root and AASA-excluded paths in the browser", () => {
       "/help",
       "/help/getting-started",
       "/login",
+      "/verifyNoPopupBlockerHtmlAndRedirect",
       "/reverify-student-email",
       "/appeals/case-123",
       "/oauth2/authorize",
@@ -81,6 +82,26 @@ test("matches AASA path patterns without prefix overmatching", () => {
   assert.equal(
     shouldRedirectToApp("https://app.notion.com/team/acme/join/invite-token"),
     false,
+  );
+});
+
+test("keeps popup login bootstrap navigation in the browser", () => {
+  const loginUrl =
+    "https://app.notion.com/verifyNoPopupBlockerHtmlAndRedirect" +
+    "?redirectUri=https%3A%2F%2Fapp.notion.com%2Fgooglepopupredirect%3FcallbackType%3Dpopup";
+
+  assert.equal(shouldRedirectToApp(loginUrl), false);
+  assert.equal(
+    shouldRedirectToApp(
+      "https://app.notion.com/verifyNoPopupBlockerHtmlAndRedirected",
+    ),
+    true,
+  );
+  assert.equal(
+    shouldRedirectToApp(
+      "https://app.notion.com/verifyNoPopupBlockerHtmlAndRedirect/child",
+    ),
+    true,
   );
 });
 
