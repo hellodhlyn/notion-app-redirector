@@ -7,9 +7,16 @@ function pathPatternToRegExp(pattern) {
   return new RegExp(`^${source}$`);
 }
 
-const notionExcludedPathMatchers = notionAasaExcludedPathPatterns.map(
-  pathPatternToRegExp,
-);
+// Keep exact non-document routes here only when Notion serves browser-only HTML
+// but omits them from its AASA exclusions.
+const notionBrowserOnlySupplementalPathPatterns = [
+  "/verifyNoPopupBlockerHtmlAndRedirect",
+];
+
+const notionExcludedPathMatchers = [
+  ...notionAasaExcludedPathPatterns,
+  ...notionBrowserOnlySupplementalPathPatterns,
+].map(pathPatternToRegExp);
 
 function additionalPathMatchers(pathPatterns) {
   if (!Array.isArray(pathPatterns)) {
